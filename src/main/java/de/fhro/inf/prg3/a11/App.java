@@ -2,14 +2,20 @@ package de.fhro.inf.prg3.a11;
 
 import de.fhro.inf.prg3.a11.openmensa.OpenMensaAPI;
 import de.fhro.inf.prg3.a11.openmensa.OpenMensaAPIService;
+import de.fhro.inf.prg3.a11.openmensa.model.Canteen;
+import de.fhro.inf.prg3.a11.openmensa.model.Meal;
+import de.fhro.inf.prg3.a11.openmensa.model.PageInfo;
+import de.fhro.inf.prg3.a11.openmensa.model.State;
+import okhttp3.Headers;
+import retrofit2.Response;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.Locale;
-import java.util.Scanner;
+import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 /**
  * @author Peter Kurfer
@@ -26,6 +32,7 @@ public class App {
 
     public static void main(String[] args) {
         MenuSelection selection;
+
         /* loop while true to get back to the menu every time an action was performed */
         do {
             selection = menu();
@@ -51,16 +58,65 @@ public class App {
 
     private static void printCanteens() {
         System.out.print("Fetching canteens [");
-        /* TODO fetch all canteens and print them to STDOUT
+        /* DONE: fetch all canteens and print them to STDOUT
          * at first get a page without an index to be able to extract the required pagination information
          * afterwards you can iterate the remaining pages
          * keep in mind that you should await the process as the user has to select canteen with a specific id */
+
+        List<Canteen> latestPage = null;
+        Response<List<Canteen>> canteensResponse = null;
+        try {
+            canteensResponse = openMensaAPI.getCanteens().get();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } catch (ExecutionException e) {
+            e.printStackTrace();
+        }
+        PageInfo pageInfo = PageInfo.extractFromResponse(canteensResponse);
+        //add first page of Canteens to the List of allCanteens
+        List<Canteen> allCanteens = new ArrayList<>(canteensResponse.body());
+
+        for(int i = 2; i < pageInfo.getTotalCountOfPages(); i++){
+            //add each Mensa to the List of allCanteens, one page at a time, starting at the second page
+
+            latestPage = openMensaAPI.getCanteens(i).join();
+            allCanteens.addAll(latestPage);
+        }
+
+        while(latestPage == null){
+            try {
+                Thread.sleep(500);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+
+        for(Canteen c: allCanteens){
+            System.out.println(c.toString());
+        }
+
     }
 
     private static void printMeals() {
         /* TODO fetch all meals for the currently selected canteen
          * to avoid errors retrieve at first the state of the canteen and check if the canteen is opened at the selected day
          * don't forget to check if a canteen was selected previously! */
+        if(currentCanteenId == -1){
+            System.out.println("Before showing the Meals of today, please first select a canteen");
+            return;
+        }
+        State canteenState = openMensaAPI.getCanteenState(currentCanteenId, dateFormat.format(currentDate.getTime())).join();
+
+        if(canteenState.isClosed())
+            System.out.println("The Canteen is closed today. Go order a pizza or something.");
+        else{
+            List<Meal> meals = openMensaAPI.getMeals(currentCanteenId, dateFormat.format(currentDate.getTime())).join();
+            for(Meal m: meals){
+                System.out.println(m.getName());
+            }
+        }
+
+
     }
 
     /**

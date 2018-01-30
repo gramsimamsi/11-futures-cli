@@ -30,6 +30,7 @@ dependencies {
     /* Retrofit */
     implementation "com.squareup.retrofit2:retrofit:$retrofit2_version"
     implementation "com.squareup.retrofit2:converter-gson:$retrofit2_version"
+    compile "com.squareup.retrofit2:adapter-java8:$retrofit2_version"
 
     /* JUnit 5 */
     testImplementation("org.junit.jupiter:junit-jupiter-api:${junitJupiterVersion}")

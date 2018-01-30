@@ -2,6 +2,7 @@ package de.fhro.inf.prg3.a11.openmensa;
 
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
+import retrofit2.adapter.java8.Java8CallAdapterFactory;
 
 /**
  * OpenMensaAPI service
@@ -25,7 +26,7 @@ public final class OpenMensaAPIService {
         /* Initialize Retrofit */
         Retrofit retrofit = new Retrofit.Builder()
                 .baseUrl("http://openmensa.org/api/v2/")
-                .addConverterFactory(GsonConverterFactory.create())
+                .addConverterFactory(GsonConverterFactory.create()).addCallAdapterFactory(Java8CallAdapterFactory.create())
                 .build();
 
         openMensaAPI = retrofit.create(OpenMensaAPI.class);
